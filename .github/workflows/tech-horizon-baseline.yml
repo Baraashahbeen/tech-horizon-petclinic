@@ -1,0 +1,52 @@
+
+name: Tech Horizon - Baseline Build and Coverage
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  baseline:
+    name: Build, Test and Measure Coverage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Display Java and Maven versions
+        run: |
+          chmod +x ./mvnw
+          java -version
+          ./mvnw --version
+
+      - name: Build and run automated tests
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Verify JaCoCo XML coverage report
+        run: |
+          test -s target/site/jacoco/jacoco.xml
+          echo "JaCoCo coverage report generated successfully."
+
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tech-horizon-baseline-reports
+          path: |
+            target/site/jacoco/
+            target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 14
