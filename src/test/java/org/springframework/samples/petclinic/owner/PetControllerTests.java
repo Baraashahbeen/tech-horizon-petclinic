@@ -271,11 +271,10 @@ class PetControllerTests {
 
 	}
 
-
 	@Test
 	void petCreationIgnoresSubmittedIdAndNestedVisit() throws Exception {
-		mockMvc.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID)
-				.param("name", "Betty")
+		mockMvc
+			.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
 				.param("type", "hamster")
 				.param("birthDate", "2015-02-12")
 				.param("id", "777")

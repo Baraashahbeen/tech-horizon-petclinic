@@ -315,10 +315,10 @@ class OwnerControllerTests {
 			.andExpect(flash().attributeExists("error"));
 	}
 
-
 	@Test
 	void creationDoesNotBindOwnerIdOrNestedPetProperties() throws Exception {
-		mockMvc.perform(post("/owners/new").param("firstName", "Joe")
+		mockMvc
+			.perform(post("/owners/new").param("firstName", "Joe")
 				.param("lastName", "Bloggs")
 				.param("address", "123 Caramel Street")
 				.param("city", "London")

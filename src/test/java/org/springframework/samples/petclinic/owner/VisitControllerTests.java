@@ -118,10 +118,10 @@ class VisitControllerTests {
 			.andExpect(view().name("pets/createOrUpdateVisitForm"));
 	}
 
-
 	@Test
 	void visitCreationIgnoresSubmittedIdentifier() throws Exception {
-		mockMvc.perform(post("/owners/{ownerId}/pets/{petId}/visits/new", TEST_OWNER_ID, TEST_PET_ID)
+		mockMvc
+			.perform(post("/owners/{ownerId}/pets/{petId}/visits/new", TEST_OWNER_ID, TEST_PET_ID)
 				.param("date", LocalDate.now().plusDays(1).toString())
 				.param("description", "Visit Description")
 				.param("id", "777"))
