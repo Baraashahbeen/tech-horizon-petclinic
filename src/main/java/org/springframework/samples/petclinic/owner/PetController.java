@@ -106,8 +106,8 @@ class PetController {
 	}
 
 	@PostMapping("/pets/new")
-	public String processCreationForm(@PathVariable("ownerId") int ownerId, @Valid @ModelAttribute("pet") PetForm pet, BindingResult result,
-			RedirectAttributes redirectAttributes) {
+	public String processCreationForm(@PathVariable("ownerId") int ownerId, @Valid @ModelAttribute("pet") PetForm pet,
+			BindingResult result, RedirectAttributes redirectAttributes) {
 
 		Owner owner = findOwner(ownerId);
 		if (StringUtils.hasText(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {
