@@ -35,15 +35,5 @@ jobs:
             printf 'MYSQL_PASSWORD=%s\n' "$(openssl rand -hex 24)"
             printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)"
           } > .env
-      - name: Format and report Java changes
-        shell: bash
-        run: |
-          ./mvnw -B -ntp spring-javaformat:apply
-          for file in src/main/java/org/springframework/samples/petclinic/owner/OwnerForm.java src/main/java/org/springframework/samples/petclinic/owner/PetForm.java src/main/java/org/springframework/samples/petclinic/owner/VisitForm.java src/main/java/org/springframework/samples/petclinic/owner/PetFormValidator.java src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java src/main/java/org/springframework/samples/petclinic/owner/PetController.java src/main/java/org/springframework/samples/petclinic/owner/VisitController.java src/test/java/org/springframework/samples/petclinic/owner/OwnerControllerTests.java src/test/java/org/springframework/samples/petclinic/owner/FormBindingSecurityTests.java; do
-            echo "===FORMATTED_FILE:$file==="
-            base64 -w0 "$file"
-            echo
-            echo "===END_FORMATTED_FILE==="
-          done
       - name: Build with Maven Wrapper
         run: ./mvnw -B verify
