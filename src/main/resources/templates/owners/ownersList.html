@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 
-<html xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'owners')}">
+<html lang="en" th:lang="${#locale.language}" xmlns:th="https://www.thymeleaf.org" th:replace="~{fragments/layout :: layout (~{::body},'owners')}">
+<head><title th:text="#{layoutTitle}">PetClinic :: a Spring Framework demonstration</title></head>
 
 <body>
 
