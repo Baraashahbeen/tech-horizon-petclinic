@@ -26,8 +26,7 @@ class FormBindingSecurityTests {
 		binder.bind(values);
 
 		assertEquals("Jane", owner.getFirstName());
-		
-		
+
 		assertEquals(2, binder.getBindingResult().getSuppressedFields().length);
 	}
 
@@ -44,7 +43,7 @@ class FormBindingSecurityTests {
 
 		assertEquals("Max", pet.getName());
 		assertNull(pet.getId());
-		
+
 		assertEquals(2, binder.getBindingResult().getSuppressedFields().length);
 	}
 
@@ -59,7 +58,7 @@ class FormBindingSecurityTests {
 		binder.bind(values);
 
 		assertEquals("Checkup", visit.getDescription());
-		
+
 		assertEquals(1, binder.getBindingResult().getSuppressedFields().length);
 	}
 
