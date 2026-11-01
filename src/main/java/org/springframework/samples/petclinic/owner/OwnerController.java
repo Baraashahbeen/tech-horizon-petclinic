@@ -62,13 +62,13 @@ class OwnerController {
 
 	@ModelAttribute("owner")
 	public OwnerForm findOwner(@PathVariable(name = "ownerId", required = false) Integer ownerId) {
-        if (ownerId == null) {
-            return new OwnerForm();
-        }
-        Owner existing = this.owners.findById(ownerId)
-            .orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId));
-        return OwnerForm.fromOwner(existing);
-    }
+		if (ownerId == null) {
+			return new OwnerForm();
+		}
+		Owner existing = this.owners.findById(ownerId)
+			.orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId));
+		return OwnerForm.fromOwner(existing);
+	}
 
 	@GetMapping("/owners/new")
 	public String initCreationForm() {
@@ -76,16 +76,17 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/new")
-	public String processCreationForm(@Valid OwnerForm owner, BindingResult result, RedirectAttributes redirectAttributes) {
+	public String processCreationForm(@Valid OwnerForm owner, BindingResult result,
+			RedirectAttributes redirectAttributes) {
 		if (result.hasErrors()) {
 			redirectAttributes.addFlashAttribute("error", "There was an error in creating the owner.");
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
 
 		Owner entity = new Owner();
-        owner.applyTo(entity);
-        this.owners.save(entity);
-        redirectAttributes.addFlashAttribute("message", "New Owner Created");
+		owner.applyTo(entity);
+		this.owners.save(entity);
+		redirectAttributes.addFlashAttribute("message", "New Owner Created");
 		return "redirect:/owners/" + entity.getId();
 	}
 
@@ -154,17 +155,17 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/{ownerId}/edit")
-	public String processUpdateOwnerForm(@Valid OwnerForm owner, BindingResult result, @PathVariable("ownerId") int ownerId,
-			RedirectAttributes redirectAttributes) {
+	public String processUpdateOwnerForm(@Valid OwnerForm owner, BindingResult result,
+			@PathVariable("ownerId") int ownerId, RedirectAttributes redirectAttributes) {
 		if (result.hasErrors()) {
 			redirectAttributes.addFlashAttribute("error", "There was an error in updating the owner.");
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
 
 		Owner entity = this.owners.findById(ownerId)
-            .orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId));
-        owner.applyTo(entity);
-        		this.owners.save(entity);
+			.orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId));
+		owner.applyTo(entity);
+		this.owners.save(entity);
 		redirectAttributes.addFlashAttribute("message", "Owner Values Updated");
 		return "redirect:/owners/{ownerId}";
 	}
