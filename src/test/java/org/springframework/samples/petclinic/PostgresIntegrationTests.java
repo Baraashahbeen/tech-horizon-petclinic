@@ -80,8 +80,11 @@ public class PostgresIntegrationTests {
 
 	@Test
 	void findAll() throws Exception {
-		vets.findAll();
-		vets.findAll(); // served from cache
+		var firstResult = vets.findAll();
+		var cachedResult = vets.findAll(); // served from cache
+
+		assertThat(firstResult).isNotEmpty();
+		assertThat(cachedResult).containsExactlyInAnyOrderElementsOf(firstResult);
 	}
 
 	@Test
