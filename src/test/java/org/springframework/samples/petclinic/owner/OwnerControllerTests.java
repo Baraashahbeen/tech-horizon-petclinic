@@ -315,4 +315,22 @@ class OwnerControllerTests {
 			.andExpect(flash().attributeExists("error"));
 	}
 
+
+	@Test
+	void creationDoesNotBindOwnerIdOrNestedPetProperties() throws Exception {
+		mockMvc.perform(post("/owners/new").param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1316761638")
+				.param("id", "777")
+				.param("pets[0].name", "Injected"))
+			.andExpect(status().is3xxRedirection());
+
+		org.mockito.ArgumentCaptor<Owner> saved = org.mockito.ArgumentCaptor.forClass(Owner.class);
+		verify(owners).save(saved.capture());
+		org.junit.jupiter.api.Assertions.assertNull(saved.getValue().getId());
+		org.junit.jupiter.api.Assertions.assertTrue(saved.getValue().getPets().isEmpty());
+	}
+
 }
