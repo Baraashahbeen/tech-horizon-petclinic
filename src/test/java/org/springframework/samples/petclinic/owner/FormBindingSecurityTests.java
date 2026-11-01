@@ -5,6 +5,7 @@ import org.springframework.beans.MutablePropertyValues;
 import org.springframework.web.bind.WebDataBinder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 
 /**
