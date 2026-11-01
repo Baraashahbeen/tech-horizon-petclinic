@@ -27,5 +27,15 @@ jobs:
           cache: maven
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+      - name: Prepare disposable database credentials for CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          {
+            printf 'MYSQL_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+            printf 'MYSQL_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+            printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+          } > .env
       - name: Build with Gradle
         run: ./gradlew build

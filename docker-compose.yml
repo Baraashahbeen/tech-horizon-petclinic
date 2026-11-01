@@ -1,21 +1,22 @@
+# Development-only databases. Configure credentials in a local, untracked .env file.
+# Do not expose database ports outside localhost.
 services:
   mysql:
     image: mysql:9.7
     ports:
-      - "3306:3306"
+      - "127.0.0.1:3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=
-      - MYSQL_ALLOW_EMPTY_PASSWORD=true
-      - MYSQL_USER=petclinic
-      - MYSQL_PASSWORD=petclinic
-      - MYSQL_DATABASE=petclinic
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in a local .env file}"
+      MYSQL_USER: petclinic
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in a local .env file}"
+      MYSQL_DATABASE: petclinic
     volumes:
       - "./conf.d:/etc/mysql/conf.d:ro"
   postgres:
     image: postgres:18.4
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
-      - POSTGRES_PASSWORD=petclinic
-      - POSTGRES_USER=petclinic
-      - POSTGRES_DB=petclinic
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in a local .env file}"
+      POSTGRES_USER: petclinic
+      POSTGRES_DB: petclinic
