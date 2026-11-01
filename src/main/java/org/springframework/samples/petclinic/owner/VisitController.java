@@ -93,8 +93,8 @@ class VisitController {
 	// Spring MVC calls method loadPetWithVisit(...) before processNewVisitForm is
 	// called
 	@PostMapping("/owners/{ownerId}/pets/{petId}/visits/new")
-	public String processNewVisitForm(@PathVariable("ownerId") int ownerId, @PathVariable int petId, @Valid VisitForm visit,
-			BindingResult result, RedirectAttributes redirectAttributes) {
+	public String processNewVisitForm(@PathVariable("ownerId") int ownerId, @PathVariable int petId,
+			@Valid VisitForm visit, BindingResult result, RedirectAttributes redirectAttributes) {
 		if (visit.getDate() != null && !visit.getDate().isAfter(LocalDate.now())) {
 			result.rejectValue("date", "typeMismatch.visitDate");
 		}
@@ -104,9 +104,9 @@ class VisitController {
 		}
 
 		Owner owner = this.owners.findById(ownerId)
-            .orElseThrow(() -> new IllegalArgumentException("Owner not found: " + ownerId));
-        owner.addVisit(petId, visit.toNewVisit());
-        this.owners.save(owner);
+			.orElseThrow(() -> new IllegalArgumentException("Owner not found: " + ownerId));
+		owner.addVisit(petId, visit.toNewVisit());
+		this.owners.save(owner);
 		redirectAttributes.addFlashAttribute("message", "Your visit has been booked");
 		return "redirect:/owners/{ownerId}";
 	}
