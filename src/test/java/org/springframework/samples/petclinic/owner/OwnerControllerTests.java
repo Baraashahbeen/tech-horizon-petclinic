@@ -297,13 +297,16 @@ class OwnerControllerTests {
 
 	@Test
 	void processUpdateOwnerFormIgnoresForgedIdentifier() throws Exception {
-		mockMvc.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).param("id", "999")
-				.param("firstName", "George").param("lastName", "Franklin")
-				.param("address", "110 W. Liberty St.").param("city", "Madison")
+		mockMvc
+			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).param("id", "999")
+				.param("firstName", "George")
+				.param("lastName", "Franklin")
+				.param("address", "110 W. Liberty St.")
+				.param("city", "Madison")
 				.param("telephone", "6085551023"))
 			.andExpect(status().is3xxRedirection());
-		verify(this.owners).save(org.mockito.ArgumentMatchers.argThat(owner ->
-				owner.getId() != null && owner.getId().equals(TEST_OWNER_ID)));
+		verify(this.owners).save(org.mockito.ArgumentMatchers
+			.argThat(owner -> owner.getId() != null && owner.getId().equals(TEST_OWNER_ID)));
 	}
 
 }
