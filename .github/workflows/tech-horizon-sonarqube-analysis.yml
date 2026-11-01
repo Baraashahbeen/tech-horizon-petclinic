@@ -28,6 +28,21 @@ jobs:
       SONAR_HOST_URL: http://127.0.0.1:19000
 
     steps:
+      - name: Mark SonarQube analysis as running
+        env:
+          GH_STATUS_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          payload='{"state":"pending","context":"Tech Horizon / SonarQube","description":"SonarQube analysis is running on main"}'
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_STATUS_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" >/dev/null
+
       - name: Checkout source code
         uses: actions/checkout@v7
         with:
@@ -196,6 +211,28 @@ jobs:
           payload="$(jq -nc --arg state "$state" --arg description "$description" \
             --arg context "Tech Horizon / SonarQube" \
             '{state:$state,description:($description|.[0:140]),context:$context}')"
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_STATUS_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "Content-Type: application/json" \
+            --data "$payload" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA" >/dev/null
+
+      - name: Publish failed analysis status
+        if: failure()
+        env:
+          GH_STATUS_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          payload="$(jq -nc \
+            --arg state failure \
+            --arg context "Tech Horizon / SonarQube" \
+            --arg description "Analysis did not complete; inspect the GitHub Actions run" \
+            --arg target_url "$run_url" \
+            '{state:$state,context:$context,description:$description,target_url:$target_url}')"
           curl --fail --silent --show-error \
             -X POST \
             -H "Authorization: Bearer $GH_STATUS_TOKEN" \
