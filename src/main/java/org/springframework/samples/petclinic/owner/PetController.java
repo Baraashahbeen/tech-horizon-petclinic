@@ -106,7 +106,7 @@ class PetController {
 	}
 
 	@PostMapping("/pets/new")
-	public String processCreationForm(@PathVariable("ownerId") int ownerId, @Valid PetForm pet, BindingResult result,
+	public String processCreationForm(@PathVariable("ownerId") int ownerId, @Valid @ModelAttribute("pet") PetForm pet, BindingResult result,
 			RedirectAttributes redirectAttributes) {
 
 		Owner owner = findOwner(ownerId);
@@ -145,7 +145,7 @@ class PetController {
 
 	@PostMapping("/pets/{petId}/edit")
 	public String processUpdateForm(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
-			@Valid PetForm pet, BindingResult result, RedirectAttributes redirectAttributes) {
+			@Valid @ModelAttribute("pet") PetForm pet, BindingResult result, RedirectAttributes redirectAttributes) {
 
 		Owner owner = findOwner(ownerId);
 		String petName = pet.getName();
