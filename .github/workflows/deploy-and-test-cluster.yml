@@ -20,6 +20,21 @@ jobs:
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@v1
 
+      - name: Create ephemeral Kubernetes database Secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          db_password="$(openssl rand -hex 24)"
+          kubectl create secret generic demo-db \
+            --type=servicebinding.io/postgresql \
+            --from-literal=type=postgresql \
+            --from-literal=provider=postgresql \
+            --from-literal=host=demo-db \
+            --from-literal=port=5432 \
+            --from-literal=database=petclinic \
+            --from-literal=username=user \
+            --from-literal="password=$db_password"
+
       - name: Deploy application
         run: |
           kubectl apply -f k8s/
