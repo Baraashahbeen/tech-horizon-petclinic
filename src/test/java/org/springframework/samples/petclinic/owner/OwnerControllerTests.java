@@ -296,17 +296,41 @@ class OwnerControllerTests {
 	}
 
 	@Test
-	void processUpdateOwnerFormIgnoresForgedIdentifier() throws Exception {
+	void processUpdateOwnerFormWithIdMismatch() throws Exception {
+		int pathOwnerId = 1;
+
+		Owner owner = new Owner();
+		owner.setId(2);
+		owner.setFirstName("John");
+		owner.setLastName("Doe");
+		owner.setAddress("Center Street");
+		owner.setCity("New York");
+		owner.setTelephone("0123456789");
+
+		when(owners.findById(pathOwnerId)).thenReturn(Optional.of(owner));
+
+		mockMvc.perform(MockMvcRequestBuilders.post("/owners/{ownerId}/edit", pathOwnerId).flashAttr("owner", owner))
+			.andExpect(status().is3xxRedirection())
+			.andExpect(redirectedUrl("/owners/" + pathOwnerId + "/edit"))
+			.andExpect(flash().attributeExists("error"));
+	}
+
+	@Test
+	void creationDoesNotBindOwnerIdOrNestedPetProperties() throws Exception {
 		mockMvc
-			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).param("id", "999")
-				.param("firstName", "George")
-				.param("lastName", "Franklin")
-				.param("address", "110 W. Liberty St.")
-				.param("city", "Madison")
-				.param("telephone", "6085551023"))
+			.perform(post("/owners/new").param("firstName", "Joe")
+				.param("lastName", "Bloggs")
+				.param("address", "123 Caramel Street")
+				.param("city", "London")
+				.param("telephone", "1316761638")
+				.param("id", "777")
+				.param("pets[0].name", "Injected"))
 			.andExpect(status().is3xxRedirection());
-		verify(this.owners).save(org.mockito.ArgumentMatchers
-			.argThat(owner -> owner.getId() != null && owner.getId().equals(TEST_OWNER_ID)));
+
+		org.mockito.ArgumentCaptor<Owner> saved = org.mockito.ArgumentCaptor.forClass(Owner.class);
+		verify(owners).save(saved.capture());
+		org.junit.jupiter.api.Assertions.assertNull(saved.getValue().getId());
+		org.junit.jupiter.api.Assertions.assertTrue(saved.getValue().getPets().isEmpty());
 	}
 
 }

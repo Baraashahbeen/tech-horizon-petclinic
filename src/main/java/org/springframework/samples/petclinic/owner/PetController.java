@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -72,21 +73,17 @@ class PetController {
 	}
 
 	@ModelAttribute("pet")
-	public PetForm findPet(@PathVariable("ownerId") int ownerId,
+	public Pet findPet(@PathVariable("ownerId") int ownerId,
 			@PathVariable(name = "petId", required = false) Integer petId) {
 
 		if (petId == null) {
-			return new PetForm();
+			return new Pet();
 		}
 
 		Optional<Owner> optionalOwner = this.owners.findById(ownerId);
 		Owner owner = optionalOwner.orElseThrow(() -> new IllegalArgumentException(
 				"Owner not found with id: " + ownerId + ". Please ensure the ID is correct "));
-		Pet existing = owner.getPet(petId);
-		if (existing == null) {
-			throw new IllegalArgumentException("Pet not found: " + petId);
-		}
-		return PetForm.fromPet(existing);
+		return owner.getPet(petId);
 	}
 
 	@InitBinder("owner")
@@ -96,20 +93,21 @@ class PetController {
 
 	@InitBinder("pet")
 	public void initPetBinder(WebDataBinder dataBinder) {
-		dataBinder.setValidator(new PetFormValidator());
+		dataBinder.setValidator(new PetValidator());
 		dataBinder.setAllowedFields("name", "birthDate", "type");
 	}
 
 	@GetMapping("/pets/new")
 	public String initCreationForm(Owner owner, ModelMap model) {
+		Pet pet = new Pet();
+		owner.addPet(pet);
 		return VIEWS_PETS_CREATE_OR_UPDATE_FORM;
 	}
 
 	@PostMapping("/pets/new")
-	public String processCreationForm(@PathVariable("ownerId") int ownerId, @Valid @ModelAttribute("pet") PetForm pet,
-			BindingResult result, RedirectAttributes redirectAttributes) {
+	public String processCreationForm(Owner owner, @Valid Pet pet, BindingResult result,
+			RedirectAttributes redirectAttributes) {
 
-		Owner owner = findOwner(ownerId);
 		if (StringUtils.hasText(pet.getName()) && pet.isNew() && owner.getPet(pet.getName(), true) != null) {
 			result.rejectValue("name", "duplicate", "already exists");
 		}
@@ -124,7 +122,7 @@ class PetController {
 		}
 
 		try {
-			owner.addPet(pet.toNewPet());
+			owner.addPet(pet);
 			this.owners.saveAndFlush(owner);
 		}
 		catch (DataIntegrityViolationException ex) {
@@ -144,16 +142,15 @@ class PetController {
 	}
 
 	@PostMapping("/pets/{petId}/edit")
-	public String processUpdateForm(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
-			@Valid @ModelAttribute("pet") PetForm pet, BindingResult result, RedirectAttributes redirectAttributes) {
+	public String processUpdateForm(Owner owner, @Valid Pet pet, BindingResult result,
+			RedirectAttributes redirectAttributes) {
 
-		Owner owner = findOwner(ownerId);
 		String petName = pet.getName();
 
 		// checking if the pet name already exists for the owner
 		if (StringUtils.hasText(petName)) {
 			Pet existingPet = owner.getPet(petName, false);
-			if (existingPet != null && !Objects.equals(existingPet.getId(), petId)) {
+			if (existingPet != null && !Objects.equals(existingPet.getId(), pet.getId())) {
 				result.rejectValue("name", "duplicate", "already exists");
 			}
 		}
@@ -168,7 +165,7 @@ class PetController {
 		}
 
 		try {
-			updatePetDetails(owner, petId, pet);
+			updatePetDetails(owner, pet);
 		}
 		catch (DataIntegrityViolationException ex) {
 			if (!isDuplicatePetNameViolation(ex)) {
@@ -186,12 +183,19 @@ class PetController {
 	 * @param owner The owner of the pet
 	 * @param pet The pet with updated details
 	 */
-	private void updatePetDetails(Owner owner, int petId, PetForm form) {
-		Pet existingPet = owner.getPet(petId);
-		if (existingPet == null) {
-			throw new IllegalArgumentException("Pet not found: " + petId);
+	private void updatePetDetails(Owner owner, Pet pet) {
+		Integer id = pet.getId();
+		Assert.state(id != null, "'pet.getId()' must not be null");
+		Pet existingPet = owner.getPet(id);
+		if (existingPet != null) {
+			// Update existing pet's properties
+			existingPet.setName(pet.getName());
+			existingPet.setBirthDate(pet.getBirthDate());
+			existingPet.setType(pet.getType());
 		}
-		form.applyTo(existingPet);
+		else {
+			owner.addPet(pet);
+		}
 		this.owners.saveAndFlush(owner);
 	}
 

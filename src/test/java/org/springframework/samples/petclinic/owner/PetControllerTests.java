@@ -112,7 +112,7 @@ class PetControllerTests {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "\t \n")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "required"))
@@ -125,7 +125,7 @@ class PetControllerTests {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "petty")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
@@ -138,7 +138,7 @@ class PetControllerTests {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "type"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "type", "required"))
@@ -154,7 +154,7 @@ class PetControllerTests {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
 					.param("birthDate", futureBirthDate))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "birthDate"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch.birthDate"))
@@ -170,7 +170,7 @@ class PetControllerTests {
 				.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
 					.param("type", "hamster")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
@@ -221,7 +221,7 @@ class PetControllerTests {
 					.param("name", "petty")
 					.param("type", "hamster")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
@@ -234,7 +234,7 @@ class PetControllerTests {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", " ")
 					.param("birthDate", "2015/02/12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "birthDate"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "birthDate", "typeMismatch"))
@@ -246,7 +246,7 @@ class PetControllerTests {
 			mockMvc
 				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "  ")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "required"))
@@ -261,7 +261,7 @@ class PetControllerTests {
 				.perform(post("/owners/{ownerId}/pets/{petId}/edit", TEST_OWNER_ID, TEST_PET_ID).param("name", "Betty")
 					.param("type", "hamster")
 					.param("birthDate", "2015-02-12"))
-				.andExpect(model().attributeExists("owner"))
+				.andExpect(model().attributeHasNoErrors("owner"))
 				.andExpect(model().attributeHasErrors("pet"))
 				.andExpect(model().attributeHasFieldErrors("pet", "name"))
 				.andExpect(model().attributeHasFieldErrorCode("pet", "name", "duplicate"))
@@ -269,6 +269,24 @@ class PetControllerTests {
 				.andExpect(view().name("pets/createOrUpdatePetForm"));
 		}
 
+	}
+
+	@Test
+	void petCreationIgnoresSubmittedIdAndNestedVisit() throws Exception {
+		mockMvc
+			.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID).param("name", "Betty")
+				.param("type", "hamster")
+				.param("birthDate", "2015-02-12")
+				.param("id", "777")
+				.param("visits[0].description", "Injected"))
+			.andExpect(status().is3xxRedirection());
+
+		org.mockito.ArgumentCaptor<Owner> saved = org.mockito.ArgumentCaptor.forClass(Owner.class);
+		org.mockito.Mockito.verify(owners).saveAndFlush(saved.capture());
+		Pet created = saved.getValue().getPet("Betty");
+		org.junit.jupiter.api.Assertions.assertNotNull(created);
+		org.junit.jupiter.api.Assertions.assertNull(created.getId());
+		org.junit.jupiter.api.Assertions.assertTrue(created.getVisits().isEmpty());
 	}
 
 }
