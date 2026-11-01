@@ -9,41 +9,66 @@ import org.springframework.format.annotation.DateTimeFormat;
  */
 public class PetForm {
 
-    private Integer id;
-    private String name;
+	private Integer id;
 
-    @DateTimeFormat(pattern = "yyyy-MM-dd")
-    private LocalDate birthDate;
+	private String name;
 
-    private PetType type;
+	@DateTimeFormat(pattern = "yyyy-MM-dd")
+	private LocalDate birthDate;
 
-    public static PetForm fromPet(Pet pet) {
-        PetForm form = new PetForm();
-        form.id = pet.getId();
-        form.name = pet.getName();
-        form.birthDate = pet.getBirthDate();
-        form.type = pet.getType();
-        return form;
-    }
+	private PetType type;
 
-    public Pet toNewPet() {
-        Pet pet = new Pet();
-        applyTo(pet);
-        return pet;
-    }
+	public static PetForm fromPet(Pet pet) {
+		PetForm form = new PetForm();
+		form.id = pet.getId();
+		form.name = pet.getName();
+		form.birthDate = pet.getBirthDate();
+		form.type = pet.getType();
+		return form;
+	}
 
-    public void applyTo(Pet pet) {
-        pet.setName(name);
-        pet.setBirthDate(birthDate);
-        pet.setType(type);
-    }
+	public Pet toNewPet() {
+		Pet pet = new Pet();
+		applyTo(pet);
+		return pet;
+	}
 
-    public boolean isNew() { return id == null; }
-    public Integer getId() { return id; }
-    public String getName() { return name; }
-    public void setName(String value) { name = value; }
-    public LocalDate getBirthDate() { return birthDate; }
-    public void setBirthDate(LocalDate value) { birthDate = value; }
-    public PetType getType() { return type; }
-    public void setType(PetType value) { type = value; }
+	public void applyTo(Pet pet) {
+		pet.setName(name);
+		pet.setBirthDate(birthDate);
+		pet.setType(type);
+	}
+
+	public boolean isNew() {
+		return id == null;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String value) {
+		name = value;
+	}
+
+	public LocalDate getBirthDate() {
+		return birthDate;
+	}
+
+	public void setBirthDate(LocalDate value) {
+		birthDate = value;
+	}
+
+	public PetType getType() {
+		return type;
+	}
+
+	public void setType(PetType value) {
+		type = value;
+	}
+
 }
