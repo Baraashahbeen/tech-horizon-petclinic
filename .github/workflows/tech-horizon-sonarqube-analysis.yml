@@ -45,9 +45,9 @@ jobs:
           set -euo pipefail
           umask 077
           {
-            printf 'MYSQL_ROOT_PASSWORD=%s\\n' "$(openssl rand -hex 24)"
-            printf 'MYSQL_PASSWORD=%s\\n' "$(openssl rand -hex 24)"
-            printf 'POSTGRES_PASSWORD=%s\\n' "$(openssl rand -hex 24)"
+            printf 'MYSQL_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+            printf 'MYSQL_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+            printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)"
           } > .env
 
       - name: Run Maven tests and generate JaCoCo coverage
