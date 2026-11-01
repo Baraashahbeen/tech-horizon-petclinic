@@ -46,3 +46,8 @@ out/
 _site/
 *.css
 !petclinic.css
+
+# Local development credentials (never commit secrets)
+.env
+.env.*
+!.env.example
