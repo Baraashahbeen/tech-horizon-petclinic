@@ -1,0 +1,119 @@
+name: Tech Horizon - SonarQube Code Analysis
+
+# This workflow is manual until the AWS OIDC role and SSM access are configured.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  sonar-analysis:
+    name: Maven Tests and SonarQube Analysis
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    env:
+      AWS_REGION: eu-north-1
+      SONAR_INSTANCE_ID: i-049c298ed38cac2e1
+      SONAR_PROJECT_KEY: Tech-Horizon---PetClinic
+      SONAR_HOST_URL: http://127.0.0.1:19000
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17 and Maven cache
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Run Maven tests and generate JaCoCo coverage
+        run: |
+          chmod +x ./mvnw
+          ./mvnw -B -ntp clean verify
+          test -s target/site/jacoco/jacoco.xml
+
+      - name: Authenticate to AWS with GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::439996178122:role/tech-horizon-github-sonar-ssm
+          role-session-name: th-sonar-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+          allowed-account-ids: '439996178122'
+
+      - name: Install AWS Session Manager plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location \
+            https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb \
+            --output /tmp/session-manager-plugin.deb
+          sudo dpkg -i /tmp/session-manager-plugin.deb
+          session-manager-plugin --version
+
+      - name: Connect privately to SonarQube through AWS SSM
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws ssm start-session \
+            --region "$AWS_REGION" \
+            --target "$SONAR_INSTANCE_ID" \
+            --document-name AWS-StartPortForwardingSession \
+            --parameters '{"portNumber":["9000"],"localPortNumber":["19000"]}' \
+            > /tmp/tech-horizon-ssm.log 2>&1 &
+          echo $! > /tmp/tech-horizon-ssm.pid
+
+          for attempt in {1..45}; do
+            if curl --fail --silent --show-error --max-time 3 \
+              "$SONAR_HOST_URL/api/system/status" 2>/dev/null | grep -q '"status":"UP"'; then
+              echo "Private SSM tunnel connected. SonarQube status: UP."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::SonarQube is unavailable through SSM. Check EC2 SSM managed-instance status and IAM permissions."
+          tail -n 30 /tmp/tech-horizon-ssm.log || true
+          exit 1
+
+      - name: Analyze with SonarScanner for Maven
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$SONAR_TOKEN" ]]; then
+            echo "::error::SONAR_TOKEN repository secret is missing."
+            exit 1
+          fi
+          ./mvnw -B -ntp \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:5.5.0.6356:sonar \
+            -Dsonar.projectKey="$SONAR_PROJECT_KEY" \
+            -Dsonar.host.url="$SONAR_HOST_URL" \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.maven.scanAll=true
+
+      - name: Upload Maven test and JaCoCo reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tech-horizon-sonarqube-analysis-reports
+          path: |
+            target/site/jacoco/
+            target/surefire-reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Close the SSM tunnel
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f /tmp/tech-horizon-ssm.pid ]]; then
+            kill "$(cat /tmp/tech-horizon-ssm.pid)" 2>/dev/null || true
+          fi
