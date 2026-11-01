@@ -271,4 +271,23 @@ class PetControllerTests {
 
 	}
 
+
+	@Test
+	void petCreationIgnoresSubmittedIdAndNestedVisit() throws Exception {
+		mockMvc.perform(post("/owners/{ownerId}/pets/new", TEST_OWNER_ID)
+				.param("name", "Betty")
+				.param("type", "hamster")
+				.param("birthDate", "2015-02-12")
+				.param("id", "777")
+				.param("visits[0].description", "Injected"))
+			.andExpect(status().is3xxRedirection());
+
+		org.mockito.ArgumentCaptor<Owner> saved = org.mockito.ArgumentCaptor.forClass(Owner.class);
+		org.mockito.Mockito.verify(owners).saveAndFlush(saved.capture());
+		Pet created = saved.getValue().getPet("Betty");
+		org.junit.jupiter.api.Assertions.assertNotNull(created);
+		org.junit.jupiter.api.Assertions.assertNull(created.getId());
+		org.junit.jupiter.api.Assertions.assertTrue(created.getVisits().isEmpty());
+	}
+
 }
