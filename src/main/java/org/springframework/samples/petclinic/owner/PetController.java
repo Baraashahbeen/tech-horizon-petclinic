@@ -144,9 +144,8 @@ class PetController {
 	}
 
 	@PostMapping("/pets/{petId}/edit")
-	public String processUpdateForm(@PathVariable("ownerId") int ownerId,
-            @PathVariable("petId") int petId, @Valid PetForm pet, BindingResult result,
-			RedirectAttributes redirectAttributes) {
+	public String processUpdateForm(@PathVariable("ownerId") int ownerId, @PathVariable("petId") int petId,
+			@Valid PetForm pet, BindingResult result, RedirectAttributes redirectAttributes) {
 
 		Owner owner = findOwner(ownerId);
 		String petName = pet.getName();
@@ -188,13 +187,13 @@ class PetController {
 	 * @param pet The pet with updated details
 	 */
 	private void updatePetDetails(Owner owner, int petId, PetForm form) {
-        Pet existingPet = owner.getPet(petId);
-        if (existingPet == null) {
-            throw new IllegalArgumentException("Pet not found: " + petId);
-        }
-        form.applyTo(existingPet);
-        this.owners.saveAndFlush(owner);
-    }
+		Pet existingPet = owner.getPet(petId);
+		if (existingPet == null) {
+			throw new IllegalArgumentException("Pet not found: " + petId);
+		}
+		form.applyTo(existingPet);
+		this.owners.saveAndFlush(owner);
+	}
 
 	private boolean isDuplicatePetNameViolation(DataIntegrityViolationException ex) {
 		String message = ex.getMessage();
