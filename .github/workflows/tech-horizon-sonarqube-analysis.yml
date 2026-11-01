@@ -3,6 +3,13 @@ name: Tech Horizon - SonarQube Code Analysis
 # Manual workflow: requires narrowly scoped AWS IAM user credentials in GitHub Secrets.
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'docker-compose.yml'
+      - 'k8s/**'
+      - '.github/workflows/tech-horizon-sonarqube-analysis.yml'
 
 permissions:
   contents: read
@@ -97,6 +104,48 @@ jobs:
             -Dsonar.host.url="$SONAR_HOST_URL" \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             -Dsonar.maven.scanAll=true
+
+      - name: Check SonarQube processing and display Quality Gate
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          task_file="target/sonar/report-task.txt"
+          test -f "$task_file"
+          task_id="$(sed -n 's/^ceTaskId=//p' "$task_file")"
+          test -n "$task_id"
+
+          processed=false
+          for attempt in {1..60}; do
+            task_status="$(curl --fail --silent --show-error --user "$SONAR_TOKEN:" \
+              "$SONAR_HOST_URL/api/ce/task?id=$task_id" | jq -r '.task.status')"
+            if [[ "$task_status" == "SUCCESS" ]]; then
+              processed=true
+              break
+            fi
+            if [[ "$task_status" == "FAILED" || "$task_status" == "CANCELED" ]]; then
+              echo "::error::SonarQube background analysis failed: $task_status"
+              exit 1
+            fi
+            sleep 5
+          done
+          if [[ "$processed" != "true" ]]; then
+            echo "::error::SonarQube analysis task did not finish within polling limit."
+            exit 1
+          fi
+          gate_json="$(curl --fail --silent --show-error --user "$SONAR_TOKEN:" \
+            "$SONAR_HOST_URL/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY")"
+          gate="$(jq -r '.projectStatus.status' <<< "$gate_json")"
+          echo "Quality Gate: $gate"
+          echo "$gate_json" | jq -r '.projectStatus.conditions[] | [.metricKey,.status,.actualValue,.errorThreshold] | @tsv'
+          measures="$(curl --fail --silent --show-error --user "$SONAR_TOKEN:" \
+            "$SONAR_HOST_URL/api/measures/component?component=$SONAR_PROJECT_KEY&metricKeys=coverage,duplicated_lines_density,security_rating,vulnerabilities,bugs,code_smells,ncloc")"
+          echo "Final SonarQube measures:"
+          echo "$measures" | jq -r '.component.measures[] | [.metric,.value] | @tsv'
+          if [[ "$gate" != "OK" ]]; then
+            echo "::warning::Quality Gate is $gate. The scan completed, but the configured quality policy is not satisfied."
+          fi
 
       - name: Upload Maven test and JaCoCo reports
         if: always()
