@@ -296,23 +296,17 @@ class OwnerControllerTests {
 	}
 
 	@Test
-	void processUpdateOwnerFormWithIdMismatch() throws Exception {
-		int pathOwnerId = 1;
-
-		Owner owner = new Owner();
-		owner.setId(2);
-		owner.setFirstName("John");
-		owner.setLastName("Doe");
-		owner.setAddress("Center Street");
-		owner.setCity("New York");
-		owner.setTelephone("0123456789");
-
-		when(owners.findById(pathOwnerId)).thenReturn(Optional.of(owner));
-
-		mockMvc.perform(MockMvcRequestBuilders.post("/owners/{ownerId}/edit", pathOwnerId).flashAttr("owner", owner))
-			.andExpect(status().is3xxRedirection())
-			.andExpect(redirectedUrl("/owners/" + pathOwnerId + "/edit"))
-			.andExpect(flash().attributeExists("error"));
+	void processUpdateOwnerFormIgnoresForgedIdentifier() throws Exception {
+		mockMvc
+			.perform(post("/owners/{ownerId}/edit", TEST_OWNER_ID).param("id", "999")
+				.param("firstName", "George")
+				.param("lastName", "Franklin")
+				.param("address", "110 W. Liberty St.")
+				.param("city", "Madison")
+				.param("telephone", "6085551023"))
+			.andExpect(status().is3xxRedirection());
+		verify(this.owners).save(org.mockito.ArgumentMatchers
+			.argThat(owner -> owner.getId() != null && owner.getId().equals(TEST_OWNER_ID)));
 	}
 
 }
