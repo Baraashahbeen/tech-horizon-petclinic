@@ -76,7 +76,7 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/new")
-	public String processCreationForm(@Valid OwnerForm owner, BindingResult result,
+	public String processCreationForm(@Valid @ModelAttribute("owner") OwnerForm owner, BindingResult result,
 			RedirectAttributes redirectAttributes) {
 		if (result.hasErrors()) {
 			redirectAttributes.addFlashAttribute("error", "There was an error in creating the owner.");
@@ -96,7 +96,7 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners")
-	public String processFindForm(@RequestParam(defaultValue = "1") int page, OwnerForm owner, BindingResult result,
+	public String processFindForm(@RequestParam(defaultValue = "1") int page, @ModelAttribute("owner") OwnerForm owner, BindingResult result,
 			Model model, RedirectAttributes redirectAttributes) {
 		// allow parameterless GET request for /owners to return all records
 		String lastName = owner.getLastName();
@@ -155,7 +155,7 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/{ownerId}/edit")
-	public String processUpdateOwnerForm(@Valid OwnerForm owner, BindingResult result,
+	public String processUpdateOwnerForm(@Valid @ModelAttribute("owner") OwnerForm owner, BindingResult result,
 			@PathVariable("ownerId") int ownerId, RedirectAttributes redirectAttributes) {
 		if (result.hasErrors()) {
 			redirectAttributes.addFlashAttribute("error", "There was an error in updating the owner.");
