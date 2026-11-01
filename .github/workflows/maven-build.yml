@@ -25,5 +25,15 @@ jobs:
           java-version: ${{matrix.java}}
           distribution: 'adopt'
           cache: maven
+      - name: Prepare disposable database credentials for CI
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          {
+            printf 'MYSQL_ROOT_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+            printf 'MYSQL_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+            printf 'POSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 24)"
+          } > .env
       - name: Build with Maven Wrapper
         run: ./mvnw -B verify
