@@ -1,12 +1,11 @@
 name: Tech Horizon - SonarQube Code Analysis
 
-# This workflow is manual until the AWS OIDC role and SSM access are configured.
+# Manual workflow: requires narrowly scoped AWS IAM user credentials in GitHub Secrets.
 on:
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
 
 jobs:
   sonar-analysis:
@@ -39,11 +38,11 @@ jobs:
           ./mvnw -B -ntp clean verify
           test -s target/site/jacoco/jacoco.xml
 
-      - name: Authenticate to AWS with GitHub OIDC
+      - name: Authenticate to AWS with restricted IAM credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
-          role-to-assume: arn:aws:iam::439996178122:role/tech-horizon-github-sonar-ssm
-          role-session-name: th-sonar-${{ github.run_id }}
+          aws-access-key-id: ${{ secrets.AWS_SONAR_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SONAR_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
           allowed-account-ids: '439996178122'
 
