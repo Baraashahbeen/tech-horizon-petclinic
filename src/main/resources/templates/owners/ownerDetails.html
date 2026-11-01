@@ -45,7 +45,13 @@
   <h2 th:text="#{petsAndVisits}">Pets and Visits</h2>
 
   <table class="table table-striped">
-
+    <thead>
+      <tr>
+        <th scope="col" th:text="#{pet}">Pet</th>
+        <th scope="col" th:text="#{previousVisits}">Previous Visits</th>
+      </tr>
+    </thead>
+    <tbody>
     <tr th:each="pet : ${owner.pets}">
       <td valign="top">
         <dl class="dl-horizontal">
@@ -76,7 +82,7 @@
         </table>
       </td>
     </tr>
-
+    </tbody>
   </table>
   <script>
     // Function to hide the success and error messages after 3 seconds
