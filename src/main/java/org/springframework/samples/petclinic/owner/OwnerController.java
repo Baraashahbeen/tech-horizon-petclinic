@@ -96,8 +96,8 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners")
-	public String processFindForm(@RequestParam(defaultValue = "1") int page, @ModelAttribute("owner") OwnerForm owner, BindingResult result,
-			Model model, RedirectAttributes redirectAttributes) {
+	public String processFindForm(@RequestParam(defaultValue = "1") int page, @ModelAttribute("owner") OwnerForm owner,
+			BindingResult result, Model model, RedirectAttributes redirectAttributes) {
 		// allow parameterless GET request for /owners to return all records
 		String lastName = owner.getLastName();
 		if (lastName == null) {
