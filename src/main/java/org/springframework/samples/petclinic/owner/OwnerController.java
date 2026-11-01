@@ -16,7 +16,6 @@
 package org.springframework.samples.petclinic.owner;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -62,12 +61,14 @@ class OwnerController {
 	}
 
 	@ModelAttribute("owner")
-	public Owner findOwner(@PathVariable(name = "ownerId", required = false) Integer ownerId) {
-		return ownerId == null ? new Owner()
-				: this.owners.findById(ownerId)
-					.orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId
-							+ ". Please ensure the ID is correct " + "and the owner exists in the database."));
-	}
+	public OwnerForm findOwner(@PathVariable(name = "ownerId", required = false) Integer ownerId) {
+        if (ownerId == null) {
+            return new OwnerForm();
+        }
+        Owner existing = this.owners.findById(ownerId)
+            .orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId));
+        return OwnerForm.fromOwner(existing);
+    }
 
 	@GetMapping("/owners/new")
 	public String initCreationForm() {
@@ -75,15 +76,17 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/new")
-	public String processCreationForm(@Valid Owner owner, BindingResult result, RedirectAttributes redirectAttributes) {
+	public String processCreationForm(@Valid OwnerForm owner, BindingResult result, RedirectAttributes redirectAttributes) {
 		if (result.hasErrors()) {
 			redirectAttributes.addFlashAttribute("error", "There was an error in creating the owner.");
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
 
-		this.owners.save(owner);
-		redirectAttributes.addFlashAttribute("message", "New Owner Created");
-		return "redirect:/owners/" + owner.getId();
+		Owner entity = new Owner();
+        owner.applyTo(entity);
+        this.owners.save(entity);
+        redirectAttributes.addFlashAttribute("message", "New Owner Created");
+		return "redirect:/owners/" + entity.getId();
 	}
 
 	@GetMapping("/owners/find")
@@ -92,7 +95,7 @@ class OwnerController {
 	}
 
 	@GetMapping("/owners")
-	public String processFindForm(@RequestParam(defaultValue = "1") int page, Owner owner, BindingResult result,
+	public String processFindForm(@RequestParam(defaultValue = "1") int page, OwnerForm owner, BindingResult result,
 			Model model, RedirectAttributes redirectAttributes) {
 		// allow parameterless GET request for /owners to return all records
 		String lastName = owner.getLastName();
@@ -121,8 +124,8 @@ class OwnerController {
 
 		if (ownersResults.getTotalElements() == 1) {
 			// 1 owner found
-			owner = ownersResults.iterator().next();
-			return "redirect:/owners/" + owner.getId();
+			Owner foundOwner = ownersResults.iterator().next();
+			return "redirect:/owners/" + foundOwner.getId();
 		}
 
 		// multiple owners found
@@ -151,21 +154,17 @@ class OwnerController {
 	}
 
 	@PostMapping("/owners/{ownerId}/edit")
-	public String processUpdateOwnerForm(@Valid Owner owner, BindingResult result, @PathVariable("ownerId") int ownerId,
+	public String processUpdateOwnerForm(@Valid OwnerForm owner, BindingResult result, @PathVariable("ownerId") int ownerId,
 			RedirectAttributes redirectAttributes) {
 		if (result.hasErrors()) {
 			redirectAttributes.addFlashAttribute("error", "There was an error in updating the owner.");
 			return VIEWS_OWNER_CREATE_OR_UPDATE_FORM;
 		}
 
-		if (!Objects.equals(owner.getId(), ownerId)) {
-			result.rejectValue("id", "mismatch", "The owner ID in the form does not match the URL.");
-			redirectAttributes.addFlashAttribute("error", "Owner ID mismatch. Please try again.");
-			return "redirect:/owners/{ownerId}/edit";
-		}
-
-		owner.setId(ownerId);
-		this.owners.save(owner);
+		Owner entity = this.owners.findById(ownerId)
+            .orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + ownerId));
+        owner.applyTo(entity);
+        		this.owners.save(entity);
 		redirectAttributes.addFlashAttribute("message", "Owner Values Updated");
 		return "redirect:/owners/{ownerId}";
 	}
